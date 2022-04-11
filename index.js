@@ -7,6 +7,8 @@ const readline = require("readline");
 const EventEmitter = require("events");
 const { whiteMap, blackMap } = require("./cardmap");
 
+const regex = /[a-f0-9]/;
+
 let messages = "";
 let transmitting = true;
 let callsign = "";
@@ -42,15 +44,16 @@ function addStop(string) {
 // transmit message
 async function beginTransmit(message) {
     transmitting = true;
-    await asyncRpc("text.add_tx", addStop(message));
+    await asyncRpc("text.add_tx", [addStop(message)]);
     await asyncRpc("main.tx");
 }
 
 // turn string into hex
 function convertHex(string) {
     for (let i = 0; i < string.length; i++) {
-        if (!string[i].test("[a-f0-9]")) string[i] = "0";
+        if (!regex.test(string[i])) string[i] = "0";
     }
+    return string;
 }
 
 // check rx loop
@@ -70,12 +73,12 @@ async function addToRxBufferLoop() {
 async function messageSearchLoop() {
     let currentMsgs = messages;
     let packets = currentMsgs.match(/(fa71ff)([a-f0-9][a-f0-9])+(ff71fa)/g);
-    if (packets.length === 0) return;
+    if (packets === null) return;
     else {
         messages = messages.slice(currentMsgs);
         let message = new Message();
         message.fromByteString(packets[0]);
-        gameEmitter.emit("message", message);
+        game.emit("message", message);
     }
 }
 
@@ -154,7 +157,7 @@ async function main() {
                             let choiceMessage = new Message("choice", callsign, best);
                             await beginTransmit(choiceMessage.toByteString());
                             // wait for it to end
-                            let interval2 = setInterval(() => {
+                            let interval2 = setInterval(async () => {
                                 // if we've stopped transmitting
                                 if (!transmitting) {
                                     // clear the interval
