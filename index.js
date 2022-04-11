@@ -189,7 +189,7 @@ async function main() {
         setInterval(runLoops, 160);
         // send the initialization message
         let initMessage = new Message("init", callsign);
-        await beginTransmit(initMessage);
+        await beginTransmit(initMessage.toByteString());
         // ask the user to close entry
         await rl.question("Press enter to close entry once you're ready. (please make sure nothing is being sent before closing entry)");
         // transmit the closed entry message
