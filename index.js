@@ -22,7 +22,7 @@ let rl = readline.promises.createInterface({
 
 // create client to interface with fldigi
 const client = xmlrpc.createClient({
-    host: "localhost",
+    host: "127.0.0.1",
     port: 7362
 });
 
