@@ -1,2 +1,2 @@
 # Cards Against RF
-Cards Against RF is an implementation of Cards Against Humanity (specifically using the Family Pack for legal reasons) for amateur radio. It interfaces with Fldigi to allow usage with multiple modes (BPSK31 is recommended, though). Please note that to do a game, you will probably want to do some organizing out of band.
+Cards Against RF is an implementation of Cards Against Humanity (specifically using the Family Pack for legal reasons) for amateur radio. It interfaces with Fldigi to allow usage with multiple modes (Olivia 16/500 is recommended, though). Please note that to do a game, you will probably want to do some organizing out of band.
