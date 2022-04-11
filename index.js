@@ -333,6 +333,11 @@ async function main() {
                 state.roundCards.push(`${callsign} - ${whiteMap[state.cards[i]]}`);
                 // get rid of that card
                 state.cards.splice(index, 1);
+                // if we're the last person, reveal the cards placed
+                if (state.order.indexOf(callsign) === state.order.length - 1) {
+                    console.log("It's time for the host to choose! The cards placed in response to the prompt were:\n" + state.roundCards.join("\n"));
+                    console.log(`The prompt was: ${state.roundCard}`);
+                }
             }
             // if it's someone else being chosen
             else if (message.type === "choose" && message.payload !== callsign) {
