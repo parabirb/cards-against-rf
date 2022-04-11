@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "@ronomon/reed-solomon": "^6.0.0",
     "xmlrpc": "^1.3.2"
   }
 }
