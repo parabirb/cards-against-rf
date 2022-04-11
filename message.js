@@ -14,7 +14,7 @@ const types = [
     "whitePlace",
     "choose",
     "end",
-    "retransmit"
+    "acknowledge"
 ];
 
 // encode utf8 and decode utf8
@@ -68,7 +68,7 @@ class Message {
         this.callsign = unpadCallsign(encodeUtf8(decoded.slice(0, 6)));
         decoded.splice(0, 6);
         // decode our payload, if it exists
-        if (this.type === "init" || this.type === "join" || this.type === "closeEntry" || this.type === "retransmit") this.payload = null;
+        if (this.type === "init" || this.type === "join" || this.type === "closeEntry" || this.type === "acknowledge") this.payload = null;
         else if (this.type === "order") {
             this.payload = [];
             for (let i = 0; i < decoded.length; i += 6) {
@@ -105,9 +105,13 @@ class Message {
         // return a buffer from the byte array
         return Buffer.from(byteArray);
     }
+
+    // convert a message to a bytestring
     toByteString() {
         return this.toBytes().toString("hex");
     }
+
+    // create a message from a bytestring
     fromByteString(byteString) {
         this.fromBytes(Buffer.from(byteString, "hex"));
     }
