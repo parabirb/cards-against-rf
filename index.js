@@ -103,7 +103,7 @@ async function main() {
         state.entryClosed = false;
         state.cards = [];
         for (let i = 0; i < 10; i++) state.cards.push(Math.floor(Math.random() * blackMap.length));
-        game.on("message", (message) => {
+        game.on("message", async (message) => {
             // if we're receiving our own message, return
             if (message.callsign === callsign) return;
             // if it's a join message
@@ -119,7 +119,7 @@ async function main() {
                 console.log(`${message.callsign} has placed their card!`);
                 // acknowledge receipt of the card
                 let ackMessage = new Message("acknowledge", callsign);
-                await beginTransmit(ackMessage.toByteString());
+                // TODO: figure out if this needs to be uncommented - await beginTransmit(ackMessage.toByteString());
                 // wait for tx to finish
                 let interval = setInterval(async () => {
                     // if we're no longer transmitting
@@ -174,10 +174,12 @@ async function main() {
                                             if (state.points[i] >= state.points[highest]) highest = i;
                                         }
                                         // notify the user
-                                        console.log(`The game has ended! ${state.order[i]} won. Transmitting message... (please don't exit until your fldigi is done)`);
+                                        console.log(`The game has ended! ${state.order[i]} won. Transmitting message...`);
                                         // transmit the message
                                         let endMessage = new Message("end", callsign, state.order[i]);
                                         await beginTransmit(endMessage);
+                                        // exit
+                                        process.exit(0);
                                     }
                                 }
                             }, 500);
@@ -186,7 +188,7 @@ async function main() {
                 }, 500);
             }
         });
-        setInterval(runLoops, 160);
+        setInterval(runLoops, 300);
         // send the initialization message
         let initMessage = new Message("init", callsign);
         await beginTransmit(initMessage.toByteString());
@@ -213,8 +215,147 @@ async function main() {
         let placementMessage = new Message("blackPlace", callsign, state.cards[0]);
         await beginTransmit(placementMessage.toByteString());
     }
+    // if we're a client
     else {
-
+        // set some state variables
+        state.initialized = false;
+        state.cards = [];
+        state.order = [];
+        state.roundCard = "";
+        state.roundCards = [];
+        state.joined = false;
+        state.entryClosed = false;
+        // set up events
+        game.on("message", async (message) => {
+            // discard any messages we receive from ourself
+            if (message.callsign === callsign) return;
+            // if it's an initialization message
+            if (message.type === "init") {
+                // notify the user
+                console.log(`New game from ${message.callsign}!`);
+                // modify the state
+                state.host = message.callsign;
+                state.initialized = true;
+                // prompt the user to join
+                if (await rl.question("Join game? (yes for yes, anything else for no) (DO NOT JOIN UNTIL YOU HAVE CONFIRMED NOBODY IS TRANSMITTING) ") !== "yes" || state.entryClosed) return;
+                // send the join message
+                let joinMessage = new Message("join", callsign);
+                await beginTransmit(joinMessage.toByteString());
+                // set joined to true
+                state.joined = true;
+            }
+            // if joins have closed
+            else if (message.type === "closeEntry") {
+                // notify the user
+                console.log("Game entry has closed and the game is starting!");
+                // set entry closed to true
+                state.entryClosed = true;
+            }
+            // if it's the turn order
+            else if (message.type === "order") {
+                // notify the user
+                console.log(`The order of players has been decided! ${message.payload.join(", ")}`);
+                // if we're not in there, reset our joined value
+                if (!message.payload.includes(callsign)) joined = false;
+                // set the order of the game
+                state.order = message.payload;
+            }
+            // if it's a black card placement
+            else if (message.type === "blackPlace") {
+                // notify the user
+                console.log(`A black card has been placed! ${blackMap[message.payload]}`);
+                // set round cards to an empty array
+                state.roundCards = [];
+                // set the round card
+                state.roundCard = blackMap[message.payload];
+                // if we're first, prompt the user to pick a card
+                if (state.joined) {
+                    // if we don't have 10 cards, get to 10 cards
+                    while (state.cards.length !== 10) {
+                        state.cards.push(Math.floor(Math.random() * whiteMap.length));
+                    }
+                    // if we're first
+                    if (state.order.indexOf(callsign) === 0) {
+                        // notify the user
+                        console.log("It's your turn! Your cards are:");
+                        // show them their cards
+                        for (let i = 0; i < 10; i++) {
+                            console.log(`Index ${i}: ${whiteMap[state.cards[i]]}`);
+                        }
+                        // ask them which card they want to place
+                        let index = +(await rl.question("Which card do you want to place? (refer to it by index) "));
+                        // place their card
+                        let cardPlaceMessage = new Message("whitePlace", callsign, state.cards[index]);
+                        await beginTransmit(cardPlaceMessage.toByteString());
+                        // push the card to the round cards
+                        state.roundCards.push(`${callsign} - ${whiteMap[state.cards[i]]}`);
+                        // get rid of that card
+                        state.cards.splice(index, 1);
+                    }
+                }
+            }
+            // if it's a white card placement
+            else if (message.type === "whitePlace") {
+                // push the card to the round cards
+                state.roundCards.push(`${message.callsign} - ${whiteMap[message.payload]}`);
+                // notify the user
+                console.log(`${message.callsign} has placed their card!`);
+                // if it's the last person, reveal the cards placed
+                if (state.order.indexOf(message.callsign) === state.order.length - 1) {
+                    console.log("It's time for the host to choose! The cards placed in response to the prompt were:\n" + state.roundCards.join("\n"));
+                    console.log(`The prompt was: ${state.roundCard}`);
+                }
+            }
+            // if it's a turn (someone else)
+            else if (message.type === "turn" && message.payload !== callsign) {
+                // notify the user
+                console.log(`It's ${message.payload}'s turn!`);
+            }
+            // if it's our turn
+            else if (message.type === "turn") {
+                // notify the user
+                console.log("It's your turn! Your cards are:");
+                // show them their cards
+                for (let i = 0; i < 10; i++) {
+                    console.log(`Index ${i}: ${whiteMap[state.cards[i]]}`);
+                }
+                // show them the prompt
+                console.log(`The prompt was: ${state.roundCard}`);
+                // ask them which card they want to place
+                let index = +(await rl.question("Which card do you want to place? (refer to it by index) "));
+                // place their card
+                let cardPlaceMessage = new Message("whitePlace", callsign, state.cards[index]);
+                await beginTransmit(cardPlaceMessage.toByteString());
+                // push the card to the round cards
+                state.roundCards.push(`${callsign} - ${whiteMap[state.cards[i]]}`);
+                // get rid of that card
+                state.cards.splice(index, 1);
+            }
+            // if it's someone else being chosen
+            else if (message.type === "choose" && message.payload !== callsign) {
+                // notify the user
+                console.log(`The host chose ${message.payload}'s card!`);
+            }
+            // if it's us being chosen
+            else if (message.type === "choose") {
+                // notify the user
+                console.log("The host chose your card!");
+            }
+            // if it's the game end (someone else won)
+            else if (message.type === "end" && message.payload !== callsign) {
+                // notify the user
+                console.log(`The game has ended with ${message.payload} as the winner!`);
+                // exit
+                process.exit(0);
+            }
+            // if we won
+            else if (message.type === "end") {
+                // notify the user
+                console.log("The game has ended with you as the winner!");
+                // exit
+                process.exit(0);
+            }
+        });
     }
 }
 
