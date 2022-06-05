@@ -20,6 +20,7 @@ let rl = readline.promises.createInterface({
     output: process.stdout
 });
 
+console.log("If fldigi is not running, please restart this program after starting fldigi!");
 // create client to interface with fldigi
 const client = xmlrpc.createClient({
     host: "127.0.0.1",
@@ -93,6 +94,7 @@ function runLoops() {
 async function main() {
     // get operator's callsign
     callsign = await rl.question("What is your callsign? ");
+    callsign = callsign.toUpperCase();
     // select the mode
     let host = (await rl.question("Are you the host? (yes for yes, anything else for no) ")) === "yes";
     // if we're host
@@ -196,7 +198,7 @@ async function main() {
         let initMessage = new Message("init", callsign);
         await beginTransmit(initMessage.toByteString());
         // ask the user to close entry
-        await rl.question("Press enter to close entry once you're ready. (please make sure nothing is being sent before closing entry)");
+        await rl.question("Press enter to stop accepting new players once you're ready. (please make sure nothing is being sent before closing entry)");
         // transmit the closed entry message
         state.entryClosed = true;
         let closeEntryMessage = new Message("closeEntry", callsign);
@@ -220,6 +222,7 @@ async function main() {
     }
     // if we're a client
     else {
+        await rl.question("Press enter when ready to start receiving host messages.");
         // set some state variables
         state.initialized = false;
         state.cards = [];
@@ -240,7 +243,7 @@ async function main() {
                 state.host = message.callsign;
                 state.initialized = true;
                 // prompt the user to join
-                if (await rl.question("Join game? (yes for yes, anything else for no) (DO NOT JOIN UNTIL YOU HAVE CONFIRMED NOBODY IS TRANSMITTING) ") !== "yes" || state.entryClosed) return;
+                if (await rl.question(`Join ${message.callsign}'s game? (yes for yes, anything else for no) (DO NOT JOIN UNTIL YOU HAVE CONFIRMED NOBODY IS TRANSMITTING) `) !== "yes" || state.entryClosed) return;
                 // send the join message
                 let joinMessage = new Message("join", callsign);
                 await beginTransmit(joinMessage.toByteString());
