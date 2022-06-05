@@ -34,7 +34,7 @@ function asyncRpc(method, params = []) {
             if (err) throw err;
             resolve(val);
         });
-    })
+    });
 }
 
 // add ^r so that it stops
@@ -80,6 +80,7 @@ async function messageSearchLoop() {
         let message = new Message();
         message.fromByteString(packets[0]);
         game.emit("message", message);
+        await asyncRpc("text.clear_rx");
     }
 }
 
@@ -92,6 +93,7 @@ function runLoops() {
 
 // main function
 async function main() {
+    await asyncRpc("text.clear_rx");
     // get operator's callsign
     callsign = await rl.question("What is your callsign? ");
     callsign = callsign.toUpperCase();
@@ -219,9 +221,7 @@ async function main() {
         // transmit the card placement message
         let placementMessage = new Message("blackPlace", callsign, state.cards[0]);
         await beginTransmit(placementMessage.toByteString());
-    }
-    // if we're a client
-    else {
+    } else { //if we are client
         await rl.question("Press enter when ready to start receiving host messages.");
         // set some state variables
         state.initialized = false;
@@ -367,7 +367,14 @@ async function main() {
                 process.exit(0);
             }
         });
+        //you gotta actually run the loops homie
+        setInterval(runLoops, 160);
     }
 }
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.log(reason);
+  console.log(promise);
+});
 
 main();
