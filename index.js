@@ -368,7 +368,7 @@ async function main() {
             }
         });
         //you gotta actually run the loops homie
-        setInterval(runLoops, 300);
+        setInterval(runLoops, 160);
     }
 }
 
