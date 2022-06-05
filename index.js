@@ -243,7 +243,7 @@ async function main() {
                 state.host = message.callsign;
                 state.initialized = true;
                 // prompt the user to join
-                if (await rl.question("Join game? (yes for yes, anything else for no) (DO NOT JOIN UNTIL YOU HAVE CONFIRMED NOBODY IS TRANSMITTING) ") !== "yes" || state.entryClosed) return;
+                if (await rl.question(`Join ${message.callsign}'s game? (yes for yes, anything else for no) (DO NOT JOIN UNTIL YOU HAVE CONFIRMED NOBODY IS TRANSMITTING) `) !== "yes" || state.entryClosed) return;
                 // send the join message
                 let joinMessage = new Message("join", callsign);
                 await beginTransmit(joinMessage.toByteString());
