@@ -20,6 +20,7 @@ let rl = readline.promises.createInterface({
     output: process.stdout
 });
 
+console.log("If fldigi is not running, please restart this program after starting fldigi!");
 // create client to interface with fldigi
 const client = xmlrpc.createClient({
     host: "127.0.0.1",
