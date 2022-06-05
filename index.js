@@ -37,15 +37,10 @@ function asyncRpc(method, params = []) {
     });
 }
 
-// add ^r so that it stops
-function addStop(string) {
-    return string + "^r";
-}
-
 // transmit message
 async function beginTransmit(message) {
     transmitting = true;
-    await asyncRpc("text.add_tx", [addStop(message)]);
+    await asyncRpc("text.add_tx", [message + "^r"]);
     await asyncRpc("main.tx");
 }
 
