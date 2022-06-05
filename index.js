@@ -93,6 +93,7 @@ function runLoops() {
 async function main() {
     // get operator's callsign
     callsign = await rl.question("What is your callsign? ");
+    callsign = callsign.toUpperCase();
     // select the mode
     let host = (await rl.question("Are you the host? (yes for yes, anything else for no) ")) === "yes";
     // if we're host
@@ -196,7 +197,7 @@ async function main() {
         let initMessage = new Message("init", callsign);
         await beginTransmit(initMessage.toByteString());
         // ask the user to close entry
-        await rl.question("Press enter to close entry once you're ready. (please make sure nothing is being sent before closing entry)");
+        await rl.question("Press enter to stop accepting new players once you're ready. (please make sure nothing is being sent before closing entry)");
         // transmit the closed entry message
         state.entryClosed = true;
         let closeEntryMessage = new Message("closeEntry", callsign);
@@ -220,6 +221,7 @@ async function main() {
     }
     // if we're a client
     else {
+        await rl.question("Press enter when ready to start receiving host messages.");
         // set some state variables
         state.initialized = false;
         state.cards = [];
