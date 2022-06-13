@@ -37,15 +37,10 @@ function asyncRpc(method, params = []) {
     });
 }
 
-// add ^r so that it stops
-function addStop(string) {
-    return string + "^r";
-}
-
 // transmit message
 async function beginTransmit(message) {
     transmitting = true;
-    await asyncRpc("text.add_tx", [addStop(message)]);
+    await asyncRpc("text.add_tx", [message + "^r"]);
     await asyncRpc("main.tx");
 }
 
@@ -93,10 +88,11 @@ function runLoops() {
 
 // main function
 async function main() {
+    // clear receive buffer from fldigi
     await asyncRpc("text.clear_rx");
     // get operator's callsign
     callsign = await rl.question("What is your callsign? ");
-    callsign = callsign.toUpperCase();
+    callsign = callsign.toUpperCase(); // this and above cant be combined or else error :skull:
     // select the mode
     let host = (await rl.question("Are you the host? (yes for yes, anything else for no) ")) === "yes";
     // if we're host
